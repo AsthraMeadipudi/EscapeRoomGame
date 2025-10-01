@@ -5,23 +5,29 @@ import java.awt.Rectangle;
 import java.awt.Image;
 import java.awt.Point;
 
+
 import javax.swing.JComponent;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+
 
 import java.io.File;
 import javax.imageio.ImageIO;
 
+
 import java.util.Random;
+
 
 /**
  * A Game board on which to place and move players.
- * 
+ *
  * @author PLTW
  * @version 1.0
  */
 public class GameGUI extends JComponent
 {
   static final long serialVersionUID = 141L; // problem 1.4.1
+
 
   private static final int WIDTH = 510;
   private static final int HEIGHT = 360;
@@ -30,28 +36,34 @@ public class GameGUI extends JComponent
   private static final int GRID_H = 5;
   private static final int START_LOC_X = 15;
   private static final int START_LOC_Y = 15;
-  
+ 
   // initial placement of player
-  int x = START_LOC_X; 
+  int x = START_LOC_X;
   int y = START_LOC_Y;
+
 
   // grid image to show in background
   private Image bgImage;
+
+// multiplier 
+private int multiplier = 1;
+private int multiplierMoves = 0;
 
   // player image and info
   private Image player;
   private Point playerLoc;
   private int playerSteps;
 
+
   // walls, prizes, traps
   private int totalWalls;
-  private Rectangle[] walls; 
+  private Rectangle[] walls;
   private Image prizeImage;
   private int totalPrizes;
   private Rectangle[] prizes;
   private int totalTraps;
   private Rectangle[] traps;
-
+ 
   // scores, sometimes awarded as (negative) penalties
   private int prizeVal = 10;
   private int trapVal = 5;
@@ -59,8 +71,10 @@ public class GameGUI extends JComponent
   private int offGridVal = 5; // penalty only
   private int hitWallVal = 5;  // penalty only
 
+
   // game frame
   private JFrame frame;
+
 
   /**
    * Constructor for the GameGUI class.
@@ -68,7 +82,7 @@ public class GameGUI extends JComponent
    */
   public GameGUI()
   {
-    
+   
     try {
       bgImage = ImageIO.read(new File("grid.png"));      
     } catch (Exception e) {
@@ -79,7 +93,7 @@ public class GameGUI extends JComponent
     } catch (Exception e) {
       System.err.println("Could not open file coin.png");
     }
-  
+ 
     // player image, student can customize this image by changing file on disk
     try {
       player = ImageIO.read(new File("player.png"));      
@@ -89,6 +103,7 @@ public class GameGUI extends JComponent
     // save player location
     playerLoc = new Point(x,y);
 
+
     // create the game frame
     frame = new JFrame();
     frame.setTitle("EscapeRoom");
@@ -96,13 +111,14 @@ public class GameGUI extends JComponent
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     frame.add(this);
     frame.setVisible(true);
-    frame.setResizable(false); 
-
+    frame.setResizable(false);
+   
     // set default config
     totalWalls = 20;
     totalPrizes = 3;
     totalTraps = 5;
   }
+
 
  /**
   * After a GameGUI object is created, this method adds the walls, prizes, and traps to the gameboard.
@@ -112,13 +128,15 @@ public class GameGUI extends JComponent
   {
     traps = new Rectangle[totalTraps];
     createTraps();
-    
+   
     prizes = new Rectangle[totalPrizes];
     createPrizes();
+
 
     walls = new Rectangle[totalWalls];
     createWalls();
   }
+
 
   /**
    * Increment/decrement the player location by the amount designated.
@@ -136,9 +154,10 @@ public class GameGUI extends JComponent
   {
       int newX = x + incrx;
       int newY = y + incry;
-      
+     
       // increment regardless of whether player really moves
       playerSteps++;
+
 
       // check if off grid horizontally and vertically
       if ( (newX < 0 || newX > WIDTH-SPACE_SIZE) || (newY < 0 || newY > HEIGHT-SPACE_SIZE) )
@@ -146,6 +165,7 @@ public class GameGUI extends JComponent
         System.out.println ("OFF THE GRID!");
         return -offGridVal;
       }
+
 
       // determine if a wall is in the way
       for (Rectangle r: walls)
@@ -155,6 +175,7 @@ public class GameGUI extends JComponent
         int endX  =  (int)r.getX() + (int)r.getWidth();
         int startY =  (int)r.getY();
         int endY = (int) r.getY() + (int)r.getHeight();
+
 
         // (Note: the following if statements could be written as huge conditional but who wants to look at that!?)
         // moving RIGHT, check to the right
@@ -180,15 +201,17 @@ public class GameGUI extends JComponent
         {
           System.out.println("A WALL IS IN THE WAY");
           return -hitWallVal;
-        }     
+        }    
       }
+
 
       // all is well, move player
       x += incrx;
       y += incry;
-      repaint();   
-      return 0;   
+      repaint();  
+      return 0;  
   }
+
 
   /**
    * Check for a trap where the player will land
@@ -206,6 +229,8 @@ public class GameGUI extends JComponent
     double py = playerLoc.getY() + newy;
 
 
+
+
     for (Rectangle r: traps)
     {
       // DEBUG: System.out.println("trapx:" + r.getX() + " trapy:" + r.getY() + "\npx: " + px + " py:" + py);
@@ -219,9 +244,10 @@ public class GameGUI extends JComponent
         }
       }
     }
-    // there is no trap 
+    // there is no trap
     return false;
   }
+
 
   /**
    * Spring the trap. Traps can only be sprung once and attempts to spring
@@ -237,6 +263,7 @@ public class GameGUI extends JComponent
   {
     double px = playerLoc.getX() + newx;
     double py = playerLoc.getY() + newy;
+
 
     // check all traps, some of which may be already sprung
     for (Rectangle r: traps)
@@ -258,32 +285,79 @@ public class GameGUI extends JComponent
     return -trapVal;
   }
 
+
   /**
    * Pickup a prize and score points. If no prize is in that location, this results in a penalty.
    * <P>
    * @return positive score if a location had a prize to be picked up, otherwise a negative penalty
    */
   public int pickupPrize()
-  {
-    double px = playerLoc.getX();
-    double py = playerLoc.getY();
+{
+    // Create a temporary rectangle representing the player's position
+    Rectangle playerBounds = new Rectangle(x, y, 40, 40);
 
     for (Rectangle p: prizes)
     {
-      // DEBUG: System.out.println("prizex:" + p.getX() + " prizey:" + p.getY() + "\npx: " + px + " py:" + py);
-      // if location has a prize, pick it up
-      if (p.getWidth() > 0 && p.contains(px, py))
+      // Check if player's bounds intersect with an active prize
+      if (p.getWidth() > 0 && p.intersects(playerBounds))
       {
-        System.out.println("YOU PICKED UP A PRIZE!");
-        p.setSize(0,0);
-        repaint();
-        return prizeVal;
+        // Check for a multiplier prize. The multiplier prize is smaller.
+        if (p.getWidth() < 10) { // Assuming a prize smaller than 10 pixels is a multiplier
+            multiplier = 2;
+            multiplierMoves = 3;
+            p.setSize(0,0);
+            repaint();
+            System.out.println("MULTIPLIER ACTIVATED! All points are doubled for 3 moves.");
+            return 0; // No points for activating the multiplier
+        } else {
+            // It's a regular prize
+            p.setSize(0,0);
+            repaint();
+            System.out.println("YOU PICKED UP A PRIZE!");
+            return prizeVal; // Return normal prize points
+        }
       }
     }
+    // No prize was found at the player's location
     System.out.println("OOPS, NO PRIZE HERE");
-    return -prizeVal;  
-  }
+    return -prizeVal;
+}
 
+public int getMultiplier() {
+    return multiplier;
+}
+
+public void decrementMultiplierMoves() {
+    if (multiplierMoves > 0) {
+        multiplierMoves--;
+        if (multiplierMoves == 0) {
+            multiplier = 1; // Reset multiplier when moves run out
+            System.out.println("Multiplier has worn off.");
+        }
+    }
+}
+
+public void detrapTrap()
+{
+    double px = playerLoc.getX();
+    double py = playerLoc.getY();
+
+
+    for (Rectangle t: traps)
+    {
+        // check if player is on an active trap
+        if (t.getWidth() > 0 && t.contains(px, py))
+        {
+            // "spring" the trap by making its size zero
+            t.setSize(0,0);
+            System.out.println("YOU HAVE DETRAPPED THE TRAP!");
+            repaint();
+            return; // exit the method since the trap was found
+        }
+    }
+    // if the loop finishes without finding a trap
+    System.out.println("THERE IS NO TRAP HERE TO DETRAP");
+}
   /**
    * Return the numbers of steps the player has taken.
    * <P>
@@ -293,7 +367,7 @@ public class GameGUI extends JComponent
   {
     return playerSteps;
   }
-  
+ 
   /**
    * Set the designated number of prizes in the game.  This can be used to customize the gameboard configuration.
    * <P>
@@ -301,11 +375,11 @@ public class GameGUI extends JComponent
    * <P>
    * @param p number of prizes to create
    */
-  public void setPrizes(int p) 
+  public void setPrizes(int p)
   {
     totalPrizes = p;
   }
-  
+ 
   /**
    * Set the designated number of traps in the game. This can be used to customize the gameboard configuration.
    * <P>
@@ -313,11 +387,11 @@ public class GameGUI extends JComponent
    * <P>
    * @param t number of traps to create
    */
-  public void setTraps(int t) 
+  public void setTraps(int t)
   {
     totalTraps = t;
   }
-  
+ 
   /**
    * Set the designated number of walls in the game. This can be used to customize the gameboard configuration.
    * <P>
@@ -325,10 +399,11 @@ public class GameGUI extends JComponent
    * <P>
    * @param w number of walls to create
    */
-  public void setWalls(int w) 
+  public void setWalls(int w)
   {
     totalWalls = w;
   }
+
 
   /**
    * Reset the board to replay existing game. The method can be called at any time but results in a penalty if called
@@ -339,13 +414,15 @@ public class GameGUI extends JComponent
   public int replay()
   {
 
+
     int win = playerAtEnd();
-  
+ 
     // resize prizes and traps to "reactivate" them
     for (Rectangle p: prizes)
       p.setSize(SPACE_SIZE/3, SPACE_SIZE/3);
     for (Rectangle t: traps)
       t.setSize(SPACE_SIZE/3, SPACE_SIZE/3);
+
 
     // move player to start of board
     x = START_LOC_X;
@@ -355,44 +432,88 @@ public class GameGUI extends JComponent
     return win;
   }
 
+
  /**
   * End the game, checking if the player made it to the far right wall.
   * <P>
   * @return positive score for reaching the far right wall, penalty otherwise
   */
-  public int endGame() 
+  public int endGame()
   {
     int win = playerAtEnd();
-  
+ 
     setVisible(false);
     frame.dispose();
     return win;
   }
 
-  /*------------------- public methods not to be called as part of API -------------------*/
 
-  /** 
+  /*------------------- public methods not to be called as part of API -------------------*/
+/**
+ * Check for a wall at a specific location
+ *
+ * @param checkX amount to check in the x direction
+ * @param checkY amount to check in the y direction
+ * @return true if a wall is in the way, false otherwise
+ */
+public boolean isWall(int checkX, int checkY) {
+    int checkNewX = x + checkX;
+    int checkNewY = y + checkY;
+
+
+    // determine if a wall is in the way
+    for (Rectangle r : walls) {
+        // this rect. location
+        int startX = (int) r.getX();
+        int endX = (int) r.getX() + (int) r.getWidth();
+        int startY = (int) r.getY();
+        int endY = (int) r.getY() + (int) r.getHeight();
+
+
+        // moving RIGHT, check to the right
+        if ((checkX > 0) && (x <= startX) && (startX <= checkNewX) && (y >= startY) && (y <= endY)) {
+            return true;
+        }
+        // moving LEFT, check to the left
+        else if ((checkX < 0) && (x >= startX) && (startX >= checkNewX) && (y >= startY) && (y <= endY)) {
+            return true;
+        }
+        // moving DOWN check below
+        else if ((checkY > 0) && (y <= startY && startY <= checkNewY && x >= startX && x <= endX)) {
+            return true;
+        }
+        // moving UP check above
+        else if ((checkY < 0) && (y >= startY) && (startY >= checkNewY) && (x >= startX) && (x <= endX)) {
+            return true;
+        }
+    }
+    return false;
+}
+  /**
    * For internal use and should not be called directly: Users graphics buffer to paint board elements.
    */
   public void paintComponent(Graphics g) {
     super.paintComponent(g);
     Graphics2D g2 = (Graphics2D)g;
 
+
     // draw grid
     g.drawImage(bgImage, 0, 0, null);
 
-    // add (invisible) traps
+
+    // add traps
     for (Rectangle t : traps)
     {
-      g2.setPaint(Color.WHITE); 
+      g2.setPaint(Color.RED);
       g2.fill(t);
     }
+
 
     // add prizes
     for (Rectangle p : prizes)
     {
       // picked up prizes are 0 size so don't render
-      if (p.getWidth() > 0) 
+      if (p.getWidth() > 0)
       {
       int px = (int)p.getX();
       int py = (int)p.getY();
@@ -400,8 +521,9 @@ public class GameGUI extends JComponent
       }
     }
 
+
     // add walls
-    for (Rectangle r : walls) 
+    for (Rectangle r : walls)
     {
       g2.setPaint(Color.BLACK);
       g2.fill(r);
@@ -412,26 +534,38 @@ public class GameGUI extends JComponent
     playerLoc.setLocation(x,y);
   }
 
+
   /*------------------- private methods -------------------*/
+
 
   /*
    * Add randomly placed prizes to be picked up.
    * Note:  prizes and traps may occupy the same location, with traps hiding prizes
    */
-  private void createPrizes()
-  {
+  /*
+ * Add randomly placed prizes to be picked up.
+ * Note: prizes and traps may occupy the same location, with traps hiding prizes.
+ * Now creates prizes of two different sizes.
+ */
+private void createPrizes()
+{
     int s = SPACE_SIZE; 
     Random rand = new Random();
-     for (int numPrizes = 0; numPrizes < totalPrizes; numPrizes++)
-     {
-      int h = rand.nextInt(GRID_H);
-      int w = rand.nextInt(GRID_W);
+    for (int numPrizes = 0; numPrizes < totalPrizes; numPrizes++)
+    {
+        int h = rand.nextInt(GRID_H);
+        int w = rand.nextInt(GRID_W);
 
-      Rectangle r;
-      r = new Rectangle((w*s + 15),(h*s + 15), 15, 15);
-      prizes[numPrizes] = r;
-     }
-  }
+        Rectangle r;
+        // Randomly create a multiplier prize (smaller) or a regular prize
+        if (rand.nextInt(3) == 0) { // 1 in 3 chance of being a multiplier prize
+            r = new Rectangle((w*s + 20), (h*s + 20), 5, 5); // A small, 5x5 prize
+        } else {
+            r = new Rectangle((w*s + 15), (h*s + 15), 15, 15); // A regular, 15x15 prize
+        }
+        prizes[numPrizes] = r;
+    }
+}
 
   /*
    * Add randomly placed traps to the board. They will be painted white and appear invisible.
@@ -439,12 +573,13 @@ public class GameGUI extends JComponent
    */
   private void createTraps()
   {
-    int s = SPACE_SIZE; 
+    int s = SPACE_SIZE;
     Random rand = new Random();
      for (int numTraps = 0; numTraps < totalTraps; numTraps++)
      {
       int h = rand.nextInt(GRID_H);
       int w = rand.nextInt(GRID_W);
+
 
       Rectangle r;
       r = new Rectangle((w*s + 15),(h*s + 15), 15, 15);
@@ -452,12 +587,14 @@ public class GameGUI extends JComponent
      }
   }
 
+
   /*
-   * Add walls to the board in random locations 
+   * Add walls to the board in random locations
    */
   private void createWalls()
   {
-     int s = SPACE_SIZE; 
+     int s = SPACE_SIZE;
+
 
      Random rand = new Random();
      for (int numWalls = 0; numWalls < totalWalls; numWalls++)
@@ -465,8 +602,9 @@ public class GameGUI extends JComponent
       int h = rand.nextInt(GRID_H);
       int w = rand.nextInt(GRID_W);
 
+
       Rectangle r;
-       if (rand.nextInt(2) == 0) 
+       if (rand.nextInt(2) == 0)
        {
          // vertical wall
          r = new Rectangle((w*s + s - 5),h*s, 8,s);
@@ -480,13 +618,15 @@ public class GameGUI extends JComponent
      }
   }
 
+
   /**
-   * Checks if player as at the far right of the board 
+   * Checks if player as at the far right of the board
    * @return positive score for reaching the far right wall, penalty otherwise
    */
-  private int playerAtEnd() 
+  private int playerAtEnd()
   {
     int score;
+
 
     double px = playerLoc.getX();
     if (px > (WIDTH - 2*SPACE_SIZE))
@@ -500,6 +640,7 @@ public class GameGUI extends JComponent
       score = -endVal;
     }
     return score;
-  
+ 
   }
 }
+
